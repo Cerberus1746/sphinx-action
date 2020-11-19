@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-import json
+
 from sphinx_action import action
 
 # This is the entrypoint called by Github when our action is run. All the
@@ -11,12 +11,12 @@ if __name__ == "__main__":
 
     if "INPUT_PRE-BUILD-COMMAND" in os.environ:
         pre_command = os.environ["INPUT_PRE-BUILD-COMMAND"]
-        print("Running: {}".format(pre_command))
+        print(f"Running: {pre_command}")
         os.system(pre_command)
 
     github_env = action.GithubEnvironment(
-        build_command=os.environ.get("INPUT_BUILD-COMMAND"),
+        build_command=os.environ.get("INPUT_BUILD-COMMAND", "make html"),
     )
 
     # We build the doc folder passed in the inputs.
-    action.build_all_docs(github_env, [os.environ.get("INPUT_DOCS-FOLDER")])
+    action.build_all_docs(github_env, [os.environ.get("INPUT_DOCS-FOLDER", "docs/")])

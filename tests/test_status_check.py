@@ -1,5 +1,5 @@
-from io import StringIO
 import unittest
+from io import StringIO
 
 from sphinx_action import status_check
 
