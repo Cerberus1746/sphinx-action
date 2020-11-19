@@ -9,14 +9,17 @@ from sphinx_action import action
 if __name__ == "__main__":
     print("[sphinx-action] Starting sphinx-action build.")
 
-    if "INPUT_PRE-BUILD-COMMAND" in os.environ:
-        pre_command = os.environ["INPUT_PRE-BUILD-COMMAND"]
-        print(f"Running: {pre_command}")
-        os.system(pre_command)
+    build_command = os.environ.get("INPUT_BUILD-COMMAND")
+    docs_build = os.environ.get("INPUT_DOCS-FOLDER")
+    pre_build_command = os.environ.get("INPUT_PRE-BUILD-COMMAND")
+
+    if pre_build_command:
+        print(f"Running: {pre_build_command}")
+        os.system(pre_build_command)
 
     github_env = action.GithubEnvironment(
-        build_command=os.environ.get("INPUT_BUILD-COMMAND", "make html"),
+        build_command=build_command if build_command else "make html",
     )
 
     # We build the doc folder passed in the inputs.
-    action.build_all_docs(github_env, [os.environ.get("INPUT_DOCS-FOLDER", "docs/")])
+    action.build_all_docs(github_env, [docs_build if docs_build else "docs/"])
