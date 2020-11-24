@@ -7,7 +7,9 @@ import shlex
 from sphinx_action import status_check
 
 
-GithubEnvironment = collections.namedtuple("GithubEnvironment", ["build_command"])
+GithubEnvironment = collections.namedtuple(
+    "GithubEnvironment", ["build_command", "dependency_install_command"]
+)
 
 
 def extract_line_information(line_information):
@@ -95,13 +97,18 @@ maximum 1 argument(s) allowed, 2 supplied.
     return annotations
 
 
-def build_docs(build_command, docs_directory):
+def build_docs(github_env, docs_directory):
+    build_command = github_env.build_command
     if not build_command:
         raise ValueError("Build command may not be empty")
 
-    docs_requirements = os.path.join(docs_directory, "requirements.txt")
-    if os.path.exists(docs_requirements):
-        subprocess.check_call(["pip", "install", "-r", docs_requirements])
+    dependency_install_command = github_env.dependency_install_command
+    if dependency_install_command:
+        dependency_install_command = shlex.split(
+            dependency_install_command
+        )
+        print(f"[sphinx-action] Running: {dependency_install_command}")
+        subprocess.check_call(dependency_install_command)
 
     log_file = os.path.join(tempfile.gettempdir(), "sphinx-log")
     if os.path.exists(log_file):
@@ -128,7 +135,8 @@ def build_docs(build_command, docs_directory):
         print("[sphinx-action] Running: {}".format(build_command))
 
         return_code = subprocess.call(
-            build_command + shlex.split(sphinx_options), cwd=docs_directory
+            build_command + shlex.split(sphinx_options),
+            cwd=docs_directory
         )
 
     with open(log_file, "r") as f:
@@ -149,7 +157,7 @@ def build_all_docs(github_env, docs_directories):
         print("Building docs in {}".format(docs_dir))
         print("====================================")
 
-        return_code, annotations = build_docs(github_env.build_command, docs_dir)
+        return_code, annotations = build_docs(github_env, docs_dir)
         if return_code != 0:
             build_success = False
 

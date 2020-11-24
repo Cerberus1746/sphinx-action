@@ -1,8 +1,7 @@
 import os
 import unittest
-from unittest import mock
 
-from sphinx_action import action, status_check
+from sphinx_action import action
 
 
 TEST_PROJECTS_DIR = os.path.join(
@@ -11,6 +10,13 @@ TEST_PROJECTS_DIR = os.path.join(
 
 
 class TestAction(unittest.TestCase):
+    default_build_command = "make html"
+
+    default_action = action.GithubEnvironment(
+        build_command=default_build_command,
+        dependency_install_command=False
+    )
+
     def test_extract_line_information_with_no_line_info(self):
         self.assertEqual(
             action.extract_line_information("warnings_and_errors/index.rst: "),
@@ -39,14 +45,17 @@ class TestAction(unittest.TestCase):
         """Check that we correctly build docs when there's no errors or
         warnings"""
         return_code, annotations = action.build_docs(
-            "make html", os.path.join(TEST_PROJECTS_DIR, "no_errors")
+            self.default_action, os.path.join(TEST_PROJECTS_DIR, "no_errors")
         )
         self.assertEqual(return_code, 0)
         self.assertEqual(annotations, [])
 
     def test_build_with_custom_command(self):
         return_code, annotations = action.build_docs(
-            "sphinx-build -b html . _build",
+            action.GithubEnvironment(
+                build_command="sphinx-build -b html . _build",
+                dependency_install_command=False
+            ),
             os.path.join(TEST_PROJECTS_DIR, "no_errors"),
         )
         self.assertEqual(return_code, 0)
@@ -54,13 +63,13 @@ class TestAction(unittest.TestCase):
 
     def test_build_docs_errors(self):
         return_code, annotations = action.build_docs(
-            "make html", os.path.join(TEST_PROJECTS_DIR, "errors")
+            self.default_action, os.path.join(TEST_PROJECTS_DIR, "errors")
         )
         self.assertEqual(annotations, [])
 
     def test_build_docs_warnings(self):
         return_code, annotations = action.build_docs(
-            "make html", os.path.join(TEST_PROJECTS_DIR, "warnings")
+            self.default_action, os.path.join(TEST_PROJECTS_DIR, "warnings")
         )
         self.assertEqual(return_code, 0)
         self.assertEqual(len(annotations), 3)
@@ -86,7 +95,8 @@ class TestAction(unittest.TestCase):
 
     def test_build_docs_warnings_and_errors(self):
         return_code, annotations = action.build_docs(
-            "make html", os.path.join(TEST_PROJECTS_DIR, "warnings_and_errors")
+            self.default_action,
+            os.path.join(TEST_PROJECTS_DIR, "warnings_and_errors")
         )
         self.assertNotEqual(return_code, 0)
         self.assertEqual(len(annotations), 1)
@@ -94,13 +104,20 @@ class TestAction(unittest.TestCase):
         self.assertTrue(annotations[0].path.endswith("index.rst"))
         self.assertEqual(annotations[0].start_line, 16)
         self.assertEqual(annotations[0].end_line, 16)
-        self.assertIn('Error in "code-block" directive', annotations[0].message)
+        self.assertIn(
+            'Error in "code-block" directive', annotations[0].message
+        )
 
     def test_build_docs_with_different_makefile(self):
-        """Test some different styles of sphinx Makefiles that don't
-        use ?= for the options"""
+        """
+        Test some different styles of sphinx Makefiles that don't
+        use ?= for the options
+        """
         return_code, annotations = action.build_docs(
-            "make html", os.path.join(TEST_PROJECTS_DIR, "different_makefile")
+            self.default_action, os.path.join(
+                TEST_PROJECTS_DIR,
+                "different_makefile"
+            )
         )
         self.assertNotEqual(return_code, 0)
         self.assertEqual(len(annotations), 1)
@@ -108,26 +125,41 @@ class TestAction(unittest.TestCase):
         self.assertTrue(annotations[0].path.endswith("index.rst"))
         self.assertEqual(annotations[0].start_line, 16)
         self.assertEqual(annotations[0].end_line, 16)
-        self.assertIn('Error in "code-block" directive', annotations[0].message)
+        self.assertIn(
+            'Error in "code-block" directive',
+            annotations[0].message
+        )
 
     def test_build_all_docs_success(self):
         action.build_all_docs(
-            action.GithubEnvironment(build_command="make html",),
+            self.default_action,
             [
                 os.path.join(TEST_PROJECTS_DIR, "no_errors"),
                 os.path.join(TEST_PROJECTS_DIR, "warnings"),
-            ],
+            ]
         )
 
     def test_build_all_docs_some_success(self):
         with self.assertRaisesRegex(RuntimeError, "Build failed"):
             action.build_all_docs(
-                action.GithubEnvironment(build_command="make html",),
+                self.default_action,
                 [
                     os.path.join(TEST_PROJECTS_DIR, "no_errors"),
                     os.path.join(TEST_PROJECTS_DIR, "warnings_and_errors"),
                 ],
             )
+
+    def test_build_docs_custom_dependency_install(self):
+        action.build_all_docs(
+            action.GithubEnvironment(
+                build_command=self.default_build_command,
+                dependency_install_command="pip install -U sphinx"
+            ),
+            [
+                os.path.join(TEST_PROJECTS_DIR, "no_errors"),
+                os.path.join(TEST_PROJECTS_DIR, "warnings"),
+            ]
+        )
 
 
 if __name__ == "__main__":
