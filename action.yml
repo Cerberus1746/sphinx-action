@@ -19,7 +19,6 @@ inputs:
     description:
       The command used to install the dependencies for the documentation.
     required: false
-    default: pip install -r {docs_requirements}
   pre-build-command:
     description:
       Run before the build command, you can use this to install system level
