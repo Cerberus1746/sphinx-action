@@ -7,7 +7,9 @@ import tempfile
 from sphinx_action import status_check
 
 
-GithubEnvironment = collections.namedtuple("GithubEnvironment", ["build_command"])
+GithubEnvironment = collections.namedtuple(
+    "GithubEnvironment", ["build_command", "dependency_install_command"]
+)
 
 
 def extract_line_information(line_information):
@@ -104,16 +106,18 @@ def parse_sphinx_warnings_log(logs):
     return annotations
 
 
-def build_docs(build_command, docs_directory):
+def build_docs(github_env, docs_directory):
+    build_command = github_env.build_command
     if not build_command:
         raise ValueError("Build command may not be empty")
 
-    build_command = shlex.split(build_command)
-
-    docs_requirements = os.path.join(docs_directory, "requirements.txt")
-
-    if os.path.exists(docs_requirements):
-        subprocess.check_call(["pip", "install", "-r", docs_requirements])
+    dependency_install_command = github_env.dependency_install_command
+    if dependency_install_command:
+        dependency_install_command = shlex.split(
+            dependency_install_command
+        )
+        print(f"[sphinx-action] Running: {dependency_install_command}")
+        subprocess.check_call(dependency_install_command)
 
     else:
         subprocess.check_call(["pip", "install", "Sphinx"])
@@ -141,7 +145,8 @@ def build_docs(build_command, docs_directory):
         print(f"[sphinx-action] Running: {build_command}")
 
         return_code = subprocess.call(
-            build_command + shlex.split(sphinx_options), cwd=docs_directory
+            build_command + shlex.split(sphinx_options),
+            cwd=docs_directory
         )
 
     with open(log_file, "r") as f:
@@ -165,7 +170,7 @@ def build_all_docs(github_env, docs_directories):
         print(log_separator_title)
         print(log_separator)
 
-        return_code, annotations = build_docs(github_env.build_command, docs_dir)
+        return_code, annotations = build_docs(github_env, docs_dir)
         if return_code != 0:
             build_success = False
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-
 from sphinx_action import action
 
 # This is the entrypoint called by Github when our action is run. All the
@@ -19,6 +18,10 @@ if __name__ == "__main__":
 
     github_env = action.GithubEnvironment(
         build_command=build_command if build_command else "make html",
+        build_command=os.environ.get("INPUT_BUILD-COMMAND"),
+        dependency_install_command=os.environ.get(
+            "INPUT_DEPENDENCY-INSTALL-COMMAND"
+        )
     )
 
     # We build the doc folder passed in the inputs.

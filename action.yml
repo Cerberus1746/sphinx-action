@@ -10,11 +10,13 @@ inputs:
   docs-folder:
     description: The folder containing your sphinx docs.
     required: false
-
   build-command:
     description: The command used to build your documentation.
     required: false
-
+    default: make html
+  dependency-install-command:
+    description: The command used to install the dependencies for the documentation.
+    required: false
   pre-build-command:
     description:
       Run before the build command, you can use this to install system level
