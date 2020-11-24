@@ -10,11 +10,11 @@ process are bubbled up as Github status checks.
 
 The main purposes of this action are:
 
-* Run a CI test to ensure your documentation still builds. 
+* Run a CI test to ensure your documentation still builds.
 
 * Allow contributors to get build errors on simple doc changes inline on Github
   without having to install Sphinx and build locally.
-  
+
 ![Example Screenshot](https://i.imgur.com/Gk2W32O.png)
 
 ## How to use
@@ -23,7 +23,7 @@ Create a workflow for the action, for example:
 
 ```yaml
 name: "Pull Request Docs Check"
-on: 
+on:
 - pull_request
 
 jobs:
@@ -36,7 +36,7 @@ jobs:
         docs-folder: "docs/"
 ```
 
-* If you have any Python dependencies that your project needs (themes, 
+* If you have any Python dependencies that your project needs (themes,
 build tools, etc) then place them in a requirements.txt file inside your docs
 folder.
 
@@ -63,8 +63,8 @@ You can use these to make built HTML and PDFs available as artifacts:
 
 Or to push docs changes automatically to a `gh-pages` branch:
 
-<details><summary>Code for your workflow</summary>
-<p>
+<details>
+    <summary>Code for your workflow</summary>
 
 ```yaml
     - name: Commit documentation changes
@@ -86,7 +86,6 @@ Or to push docs changes automatically to a `gh-pages` branch:
         github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-</p>
 </details>
 
 For a full fledged example of this in action take a look at:
