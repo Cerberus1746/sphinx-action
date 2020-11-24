@@ -13,16 +13,16 @@ GithubEnvironment = collections.namedtuple(
 
 
 def extract_line_information(line_information):
-    r"""
-    Lines from sphinx log files look like this
+    """
+    Lines from sphinx log files look like this::
 
-    C:\Users\ammar\workspace\sphinx-action\tests\test_projects\warnings\index.rst:22: WARNING: Problems with "include" directive path:
-    InputError: [Errno 2] No such file or directory: 'I_DONT_EXIST'.
+        /.../index.rst:22: WARNING: Problems with "include" directive path:
+        InputError: [Errno 2] No such file or directory: 'I_DONT_EXIST'.
 
-    /home/users/ammar/workspace/sphix-action/tests/test_projects/warnings/index.rst:22: WARNING: Problems with "include" directive path:
-    InputError: [Errno 2] No such file or directory: 'I_DONT_EXIST'.
+        /.../index.rst:22: WARNING: Problems with "include" directive path:
+        InputError: [Errno 2] No such file or directory: 'I_DONT_EXIST'.
 
-    /home/users/ammar/workspace/sphix-action/tests/test_projects/warnings/index.rst: Something went wrong with this whole ifle
+        /.../index.rst: Something went wrong with this whole file
 
     This method is responsible for parsing out the line number and file name from these lines.
     """
@@ -58,14 +58,15 @@ def extract_line_information(line_information):
 def parse_sphinx_warnings_log(logs):
     """
     Parses a sphinx file containing warnings and errors into a list of
-        status_check.CheckAnnotation objects.
+    status_check.CheckAnnotation objects.
 
-        Inputs look like this:
-    /media/sf_shared/workspace/sphinx-action/tests/test_projects/warnings_and_errors/index.rst:19: WARNING: Error in "code-block" directive:
-    maximum 1 argument(s) allowed, 2 supplied.
+    Inputs look like this::
 
-    /cpython/Doc/distutils/_setuptools_disclaimer.rst: WARNING: document isn't included in any toctree
-    /cpython/Doc/contents.rst:5: WARNING: toctree contains reference to nonexisting document 'ayylmao'
+        /.../warnings_and_errors/index.rst:19: WARNING: Error in "code-block" directive:
+        maximum 1 argument(s) allowed, 2 supplied.
+
+        /.../_setuptools_disclaimer.rst: WARNING: document isn't included in any toctree
+        /.../contents.rst:5: WARNING: toctree contains reference to nonexisting document 'ayylmao'
     """
     annotations = []
 
@@ -113,25 +114,28 @@ def build_docs(github_env, docs_directory):
 
     dependency_install_command = github_env.dependency_install_command
     if dependency_install_command:
-        dependency_install_command = shlex.split(
-            dependency_install_command
-        )
+        dependency_install_command = shlex.split(dependency_install_command)
         print(f"[sphinx-action] Running: {dependency_install_command}")
         subprocess.check_call(dependency_install_command)
-
     else:
-        subprocess.check_call(["pip", "install", "Sphinx"])
+        subprocess.check_call(["pip", "install", "-U", "Sphinx"])
 
     log_file = os.path.join(tempfile.gettempdir(), "sphinx-log")
     if os.path.exists(log_file):
         os.unlink(log_file)
 
     sphinx_options = f'--keep-going --no-color -w "{log_file}"'
-    # If we're using make, pass the options as part of the SPHINXOPTS environment variable, otherwise pass them straight into the command.
 
-
+    # If we're using make,
+    # pass the options as part of the SPHINXOPTS environment variable,
+    # otherwise pass them straight into the command.
+    build_command = shlex.split(build_command)
     if build_command[0] == "make":
-        # Pass the -e option into `make`, this is specified to be Cause environment variables, including those with null values, to override macro assignments within makefiles. Which is exactly what we want.
+        # Pass the -e option into `make`,
+        # this is specified to be Cause environment variables,
+        # including those with null values,
+        # to override macro assignments within makefiles.
+        # Which is exactly what we want.
         build_command += ["-e"]
         print(f"[sphinx-action] Running: {build_command}")
 
@@ -145,8 +149,7 @@ def build_docs(github_env, docs_directory):
         print(f"[sphinx-action] Running: {build_command}")
 
         return_code = subprocess.call(
-            build_command + shlex.split(sphinx_options),
-            cwd=docs_directory
+            build_command + shlex.split(sphinx_options), cwd=docs_directory
         )
 
     with open(log_file, "r") as f:
