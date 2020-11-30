@@ -17,7 +17,6 @@ if __name__ == "__main__":
         os.system(pre_build_command)
 
     github_env = action.GithubEnvironment(
-        build_command=build_command if build_command else "make html",
         build_command=os.environ.get("INPUT_BUILD-COMMAND"),
         dependency_install_command=os.environ.get(
             "INPUT_DEPENDENCY-INSTALL-COMMAND"
